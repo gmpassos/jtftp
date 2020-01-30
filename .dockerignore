@@ -1,0 +1,6 @@
+out/
+src/
+build/
+!build/distributions
+build.gradle
+README.md

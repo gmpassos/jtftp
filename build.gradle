@@ -1,0 +1,27 @@
+apply from: "${gradleScriptsPath}/v5/single-project-java8.gradle"
+apply from: "${gradleScriptsPath}/v5/logback.gradle"
+
+apply plugin: 'application'
+
+mainClassName = "org.gracilianomp.jtftp.TFTPDaemon"
+applicationDefaultJvmArgs = ["-server"]
+
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+
+    testCompile group: 'junit', name: 'junit', version: junitVersion
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': 'Jtftp'
+        )
+    }
+}
+
+run {
+    standardInput = System.in
+}
+
