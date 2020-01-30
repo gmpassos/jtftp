@@ -19,6 +19,18 @@ import org.gracilianomp.jtftp.*;
 ...
 ```
 
+## Command Line:
+
+JAVA:
+``` 
+  $> java org.gracilianomp.jtftp.TFTPDaemon %port %directory
+```
+
+Gradle:
+``` 
+  $> ./gradlew run --args "%port %directory"
+``` 
+
 ## Features and bugs
 
 Please file feature requests and bugs at the [issue tracker][tracker].
