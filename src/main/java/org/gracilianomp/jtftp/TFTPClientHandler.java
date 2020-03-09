@@ -100,7 +100,13 @@ class TFTPClientHandler extends Thread {
     private void processRequestRead(DatagramSocket datagramSocket, FileRequest fileRequest) throws Exception {
         LOGGER.info("** Read Request from host: {}", requestHost);
 
-        File file = new File(tftpDaemon.getDirectory(), fileRequest.getFileName());
+        File file;
+        if(fileRequest.getFileName() == tftpDaemon.getFile().getName()){
+            file = tftpDaemon.getFile();
+        }else{
+            file = new File(tftpDaemon.getDirectory(), fileRequest.getFileName());
+        }
+
 
         LOGGER.info("-- Reading file: {}", file);
 
@@ -123,6 +129,10 @@ class TFTPClientHandler extends Thread {
         }
 
         LOGGER.info("** Sent file> sentAllPackets: {} ; {}", sentAllPackets, file);
+        if(tftpDaemon.getKillAfterSendFile() == true){
+            System.exit(0);
+        }
+
     }
 
     private boolean sendPacket(DatagramSocket datagramSocket, TFTPDataPacket packet) throws IOException {
