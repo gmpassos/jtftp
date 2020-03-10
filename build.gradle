@@ -4,6 +4,7 @@ apply from: "${gradleScriptsPath}/v5/logback.gradle"
 apply plugin: 'application'
 
 mainClassName = "org.gracilianomp.jtftp.TFTPDaemon"
+version = '1.0'
 applicationDefaultJvmArgs = ["-server"]
 
 dependencies {
