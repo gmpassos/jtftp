@@ -15,11 +15,19 @@ public class TFTPDaemon {
     private static final double VERSION = 1.0 ;
 
     final private int port;
-    private final File directory;
+    private File directory;
+    private File singleFile;
+    private boolean killAfterSendFile = false;
 
-    public TFTPDaemon(int port, File directory) throws IOException {
+    public TFTPDaemon(int port, File fileOrDirectory) throws IOException {
         this.port = port;
-        this.directory = directory;
+
+        if (fileOrDirectory.isDirectory()){
+            this.directory = fileOrDirectory;
+        } else {
+            this.singleFile = fileOrDirectory;
+            killAfterSendFile = true;
+        }
 
         open();
     }
@@ -29,8 +37,15 @@ public class TFTPDaemon {
     }
 
     public File getDirectory() {
-        return directory;
+        if (singleFile != null){
+            return singleFile.getParentFile();
+        }else{
+            return directory;
+        }
     }
+
+    public File getFile() { return singleFile;}
+    public boolean getKillAfterSendFile() { return killAfterSendFile; }
 
     private DatagramSocket datagramSocket;
 
@@ -54,7 +69,7 @@ public class TFTPDaemon {
         while (true) {
             try {
                 DatagramPacket requestPackage = new DatagramPacket(buffer, buffer.length);
-                LOGGER.info("Accepting initial packet...");
+                LOGGER.info("Accepting initial packet.git ..");
 
                 datagramSocket.receive(requestPackage);
 
