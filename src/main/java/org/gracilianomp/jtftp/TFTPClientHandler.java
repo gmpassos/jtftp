@@ -101,7 +101,7 @@ class TFTPClientHandler extends Thread {
         LOGGER.info("** Read Request from host: {}", requestHost);
 
         File file;
-        if(fileRequest.getFileName() == tftpDaemon.getFile().getName()){
+        if( fileRequest.equals( tftpDaemon.getFile() ) ){
             file = tftpDaemon.getFile();
         }else{
             file = new File(tftpDaemon.getDirectory(), fileRequest.getFileName());
