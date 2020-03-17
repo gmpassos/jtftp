@@ -15,18 +15,22 @@ public class TFTPDaemon {
     private static final double VERSION = 1.0 ;
 
     final private int port;
-    private File directory;
-    private File singleFile;
-    private boolean killAfterSendFile = false;
+    final private File directory;
+    final private File singleFile;
+    final private boolean stopAfterSendFile ;
 
     public TFTPDaemon(int port, File fileOrDirectory) throws IOException {
         this.port = port;
 
         if (fileOrDirectory.isDirectory()){
             this.directory = fileOrDirectory;
-        } else {
+            this.singleFile = null;
+            this.stopAfterSendFile = false;
+        }
+        else {
+            this.directory = null;
             this.singleFile = fileOrDirectory;
-            killAfterSendFile = true;
+            this.stopAfterSendFile = true;
         }
 
         open();
@@ -39,34 +43,85 @@ public class TFTPDaemon {
     public File getDirectory() {
         if (singleFile != null){
             return singleFile.getParentFile();
-        }else{
+        }
+        else{
             return directory;
         }
     }
 
-    public File getFile() { return singleFile;}
-    public boolean getKillAfterSendFile() { return killAfterSendFile; }
+    public File getSingleFile() {
+        return singleFile ;
+    }
+
+    public boolean stopAfterSendFile() {
+        return stopAfterSendFile;
+    }
 
     private DatagramSocket datagramSocket;
 
-    private void open() throws IOException {
-        datagramSocket = new DatagramSocket(null);
-        SocketAddress socketAddress = new InetSocketAddress("0.0.0.0", port);
-        LOGGER.info("Binding to port: {}", socketAddress);
+    private final Object MUTEX = new Object() ;
+    private boolean running = false ;
 
-        datagramSocket.bind(socketAddress);
-        datagramSocket.setReuseAddress(true);
+    public boolean isRunning() {
+        synchronized (MUTEX) {
+            return running;
+        }
+    }
+
+    public void waitStopped() {
+        synchronized (MUTEX) {
+            while ( running ) {
+                try {
+                    MUTEX.wait(10000);
+                } catch (InterruptedException e) { }
+            }
+        }
+    }
+
+    public void stop() {
+        LOGGER.info("Stopping TFTPDaemon: {}", this);
+
+        synchronized (MUTEX) {
+            running = false ;
+            MUTEX.notifyAll();
+        }
+
+        try {
+            if (datagramSocket != null) {
+                datagramSocket.close();
+            }
+        }
+        catch (Exception e) { }
+    }
+
+    private void open() throws IOException {
+        synchronized (MUTEX) {
+            if (running) return;
+            running = true;
+
+            datagramSocket = new DatagramSocket(null);
+            SocketAddress socketAddress = new InetSocketAddress("0.0.0.0", port);
+            LOGGER.info("Binding to port: {}", socketAddress);
+
+            datagramSocket.bind(socketAddress);
+            datagramSocket.setReuseAddress(true);
+        }
+
+        LOGGER.info("TFTPDaemon opened: {}", this);
 
         new Thread(this::acceptLoop).start();
     }
 
     private void acceptLoop() {
-
         LOGGER.info("Running TFTPDaemon at port {} and directory {}", port , directory);
 
         byte[] buffer = new byte[4 + TFTPDataPacket.MAX_BLOCK_SIE];
 
         while (true) {
+            synchronized (MUTEX) {
+                if (!running) break ;
+            }
+
             try {
                 DatagramPacket requestPackage = new DatagramPacket(buffer, buffer.length);
                 LOGGER.info("Accepting initial packet.git ..");
@@ -81,7 +136,22 @@ public class TFTPDaemon {
                 LOGGER.error("Error receiving initial packet", e);
             }
         }
+
+        LOGGER.info("Accept loop ended: {}", this);
     }
+
+    @Override
+    public String toString() {
+        return "TFTPDaemon{" +
+                "port=" + port +
+                ", directory=" + directory +
+                ", singleFile=" + singleFile +
+                ", stopAfterSendFile=" + stopAfterSendFile +
+                ", running=" + running +
+                '}';
+    }
+
+    ////////////////////////////////////////////////////////////
 
     private static void showHelp() {
         System.out.println("--------------------------------------------------------------------------------");

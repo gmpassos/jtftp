@@ -42,6 +42,9 @@ class TFTPClientHandler extends Thread {
     private final SocketAddress remoteAddress;
 
     public TFTPClientHandler(TFTPDaemon tftpDaemon, DatagramPacket requestPacket) {
+        super("TFTPClientHandler["+ tftpDaemon.getPort() +"]: "+ requestPacket.getAddress()) ;
+        setDaemon(true);
+
         this.tftpDaemon = tftpDaemon;
         this.requestPacket = requestPacket;
         this.remoteAddress = requestPacket.getSocketAddress();
@@ -101,12 +104,12 @@ class TFTPClientHandler extends Thread {
         LOGGER.info("** Read Request from host: {}", requestHost);
 
         File file;
-        if(fileRequest.getFileName() == tftpDaemon.getFile().getName()){
-            file = tftpDaemon.getFile();
-        }else{
+        if ( fileRequest.getFileName().equals( tftpDaemon.getSingleFile().getName() ) ) {
+            file = tftpDaemon.getSingleFile();
+        }
+        else {
             file = new File(tftpDaemon.getDirectory(), fileRequest.getFileName());
         }
-
 
         LOGGER.info("-- Reading file: {}", file);
 
@@ -129,10 +132,10 @@ class TFTPClientHandler extends Thread {
         }
 
         LOGGER.info("** Sent file> sentAllPackets: {} ; {}", sentAllPackets, file);
-        if(tftpDaemon.getKillAfterSendFile() == true){
-            System.exit(0);
-        }
 
+        if( tftpDaemon.stopAfterSendFile() ) {
+            tftpDaemon.stop() ;
+        }
     }
 
     private boolean sendPacket(DatagramSocket datagramSocket, TFTPDataPacket packet) throws IOException {
